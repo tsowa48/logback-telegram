@@ -10,13 +10,13 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class Telegram {
     private static final String TELEGRAM_BASE = "https://api.telegram.org/bot";
     private static TelegramOptions telegramOptions;
 
-    private static ConcurrentHashMap<Long, ILoggingEvent> events = new ConcurrentHashMap<>();
+    private static ConcurrentLinkedQueue<ILoggingEvent> events = new ConcurrentLinkedQueue<>();
     private static SimpleDateFormat format = new SimpleDateFormat("HH:mm:ss.SSS");
 
     public static synchronized void init(final TelegramOptions options) {
@@ -26,10 +26,9 @@ public class Telegram {
 
     private static void handler() {
         while (true) {
-            if (events.keys().hasMoreElements()) {
-                Long ts = events.keys().nextElement();
-                final ILoggingEvent event = events.remove(ts);
-                String text = telegramOptions.getApp() + ": " + format.format(new Date(ts)) + " [" + event.getLevel().levelStr + "] " + event.getFormattedMessage();
+            if (!events.isEmpty()) {
+                final ILoggingEvent event = events.poll();
+                String text = telegramOptions.getApp() + ": " + format.format(new Date(event.getTimeStamp())) + " [" + event.getLevel().levelStr + "] " + event.getFormattedMessage();
                 try {
                     URL url = new URL(TELEGRAM_BASE + telegramOptions.getKey() + "/sendMessage");
                     HttpURLConnection con = (HttpURLConnection) url.openConnection();
@@ -66,7 +65,7 @@ public class Telegram {
     }
 
     public static Long captureEvent(final ILoggingEvent event) {
-        events.put(event.getTimeStamp(), event);
+        events.add(event);
         return event.getTimeStamp();
     }
 }
