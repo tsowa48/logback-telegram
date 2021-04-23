@@ -12,6 +12,10 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+
+/**
+ * Class for handle events and send to Telegram chat ot user
+ */
 public class Telegram {
     private static final String TELEGRAM_BASE = "https://api.telegram.org/bot";
     private static TelegramOptions telegramOptions;
@@ -19,11 +23,18 @@ public class Telegram {
     private static ConcurrentLinkedQueue<ILoggingEvent> events = new ConcurrentLinkedQueue<>();
     private static SimpleDateFormat format = new SimpleDateFormat("HH:mm:ss.SSS");
 
+    /**
+     * Method like constructor to init and fill variables
+     * @param options {@link TelegramOptions}
+     */
     public static synchronized void init(final TelegramOptions options) {
         telegramOptions = options;
         new Thread(Telegram::handler).start();
     }
 
+    /**
+     * Handle every {@link ILoggingEvent} in a separate thread
+     */
     private static void handler() {
         while (true) {
             if (!events.isEmpty()) {
@@ -64,6 +75,11 @@ public class Telegram {
         }
     }
 
+    /**
+     * Capture {@link ILoggingEvent}
+     * @param event {@link ILoggingEvent}
+     * @return timestamp from {@link ILoggingEvent}
+     */
     public static Long captureEvent(final ILoggingEvent event) {
         events.add(event);
         return event.getTimeStamp();
